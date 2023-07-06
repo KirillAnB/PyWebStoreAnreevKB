@@ -20,7 +20,9 @@ class LoginView(View):
             if user is not None:
                 login(request, user)
                 return redirect('store:shop')
-        return redirect('login:login')
+        # return redirect('login:login')
+        return render(request, "login/index.html", {'error': form.errors.get("__all__")})
+
 class LogoutView(View):
     def get(self, request):
         if request.user.is_authenticated:
