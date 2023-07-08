@@ -1,10 +1,9 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
-from django.http import HttpResponse
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.db.models import OuterRef,F, ExpressionWrapper, DecimalField, Case, When
 from django.utils import timezone
-from .models import Discount, Product, Cart
+from .models import Discount, Product, Cart, Wishlist
 from rest_framework import viewsets, response
 from rest_framework.permissions import IsAuthenticated
 from .serializers import CartSerializer
@@ -226,4 +225,31 @@ class CartViewSet(viewsets.ModelViewSet):
         # В этот раз напишем примерно так как это делает фреймфорк самостоятельно
         cart_item = self.get_queryset().get(id=kwargs['pk'])
         cart_item.delete()
-        return response.Response({'message': 'Product delete from cart'}, status=201)
+        return response.Response({'message': 'Product deleted from cart'}, status=201)
+
+class WishlistView(View):
+    # def get(self, request):
+        # return render(request, 'store/wishlist.html')
+    def get(self, request):
+        if request.user.is_authenticated:
+            data = Wishlist.objects.filter(user=request.user)
+            return render(request, 'store/wishlist.html', {"data": data})
+        return redirect('login:login')
+
+class RemoveFromWishlist(View):
+    def get(self, request, product_id):
+        Wishlist.objects.filter(user=request.user, product=product_id).delete()
+        return redirect('store:wishlist')
+
+class AddToWishlist(View):
+    def get(self, request, product_id):
+        if request.user.is_authenticated:
+            product = get_object_or_404(Product, id=product_id)
+            wishlist_item = Wishlist.objects.filter(user=request.user, product=product)
+            if wishlist_item.exists():
+                return redirect('store:shop')
+            else:
+                wishlist_item = Wishlist(user=request.user, product=product)
+                wishlist_item.save()
+                return redirect('store:shop')
+        return redirect('login:login')
