@@ -6,7 +6,7 @@ from django.utils import timezone
 from .models import Discount, Product, Cart, Wishlist
 from rest_framework import viewsets, response
 from rest_framework.permissions import IsAuthenticated
-from .serializers import CartSerializer
+from .serializers import CartSerializer, WishListSerrializer
 
 
 # Создание запроса на получения всех действующих скидок
@@ -16,6 +16,7 @@ from .serializers import CartSerializer
 class CartView(View):
     def get(self, request):
         return render(request, 'store/cart.html')
+
 
 class ProductSingleView(View):
     def get(self, request, id):
@@ -179,6 +180,8 @@ class ShopView(View):
                  'discount_value')
         return render(request, 'store/shop.html', {'data': products})
 
+
+
 class CartViewSet(viewsets.ModelViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
@@ -227,6 +230,8 @@ class CartViewSet(viewsets.ModelViewSet):
         cart_item.delete()
         return response.Response({'message': 'Product deleted from cart'}, status=201)
 
+
+
 class WishlistView(View):
     # def get(self, request):
         # return render(request, 'store/wishlist.html')
@@ -236,10 +241,13 @@ class WishlistView(View):
             return render(request, 'store/wishlist.html', {"data": data})
         return redirect('login:login')
 
+
+
 class RemoveFromWishlist(View):
     def get(self, request, product_id):
         Wishlist.objects.filter(user=request.user, product=product_id).delete()
         return redirect('store:wishlist')
+
 
 class AddToWishlist(View):
     def get(self, request, product_id):
@@ -253,3 +261,12 @@ class AddToWishlist(View):
                 wishlist_item.save()
                 return redirect('store:shop')
         return redirect('login:login')
+
+
+
+class WishListViewSet(viewsets.ModelViewSet):
+    queryset = Wishlist.objects.all()
+    serializer_class = WishListSerrializer
+    permission_classes = (IsAuthenticated,)
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)

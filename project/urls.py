@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from store.urls import router as cart_router
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('other/', include('other.urls')),
